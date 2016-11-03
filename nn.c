@@ -6,9 +6,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_TENSOR_SIZE (256 * 256 * 4)
+#define MAX_TENSOR_SIZE (100 * 1024 * 1024)
 
-typedef float Storage[MAX_TENSOR_SIZE];
+typedef struct {
+	float* data;
+	int32_t size;
+} Storage;
 
 typedef struct {
 	float* data;
@@ -36,9 +39,19 @@ void error() {
 	exit(666);
 }
 
-void tensor_make_4d(Tensor* this, float* data, int32_t size0, int32_t size1, int32_t size2, int32_t size3) {
+void storage_make(Storage* this, float* data, int32_t size) {
 	this->data = data;
-	ASSERT((size0 * size1 * size2 * size3) <= MAX_TENSOR_SIZE);
+	this->size = size;
+}	
+
+void tensor_make_4d(Tensor* this, Storage* storage, int32_t size0, int32_t size1, int32_t size2, int32_t size3) {
+	int32_t size = size0 * size1 * size2 * size3; 
+	if(storage == NULL) {
+		this->data = malloc(size * sizeof(float));
+	} else {
+		this->data = storage->data;
+		ASSERT(size <= storage->size);
+	}
 	this->size0 = size0;
 	this->size1 = size1;
 	this->size2 = size2;
@@ -146,27 +159,23 @@ void test_linear() {
 	const int32_t h = 4;
 	const int32_t outputs = 2;
 	
-	Storage s1;
 	Tensor image;
-	tensor_make_4d(&image, s1, 1, 1, w, h);
+	tensor_make_4d(&image, NULL, 1, 1, w, h);
 	tensor_fill_funny(&image, 0.1);
 	
 	Tensor input;
-	tensor_make_4d(&input, s1, 1, 1, 1, w * h);
+	tensor_make_4d(&input, NULL, 1, 1, 1, w * h);
 	
-	Storage s2;
 	Tensor weight;
-	tensor_make_4d(&weight, s2, 1, 1, outputs, w * h);
+	tensor_make_4d(&weight, NULL, 1, 1, outputs, w * h);
 	tensor_fill_funny(&weight, 0.2);
 	
-	Storage s3;
 	Tensor bias;
-	tensor_make_4d(&bias, s3, 1, 1, 1, outputs);
+	tensor_make_4d(&bias, NULL, 1, 1, 1, outputs);
 	tensor_fill_funny(&bias, 0.3);
 	
-	Storage s4;
 	Tensor output;
-	tensor_make_4d(&output, s4, 1, 1, 1, outputs);
+	tensor_make_4d(&output, NULL, 1, 1, 1, outputs);
 	
 	linear_forward(&input, &weight, &bias, &output);
 
@@ -216,8 +225,8 @@ void convolution_forward(Tensor* input, Tensor* weight, Tensor* bias, Tensor* ou
 }
 
 void test_convolution() {
-	const int32_t w = 6;
-	const int32_t h = 4;
+	const int32_t w = 6000;
+	const int32_t h = 4000;
 	const int32_t kw = 3;
 	const int32_t kh = 3;
 	const int32_t w2 = w - kw + 1;
@@ -225,37 +234,33 @@ void test_convolution() {
 	const int32_t input_planes = 2;
 	const int32_t output_planes = 3;
 	
-	Storage s1;
 	Tensor input;
-	tensor_make_4d(&input, s1, 1, input_planes, w, h);
+	tensor_make_4d(&input, NULL, 1, input_planes, w, h);
 	tensor_fill_funny(&input, 0.4);
 	
-	Storage s2;
 	Tensor weight;
-	tensor_make_4d(&weight, s2, output_planes, input_planes, kw, kh);
+	tensor_make_4d(&weight, NULL, output_planes, input_planes, kw, kh);
 	tensor_fill_funny(&weight, 0.5);
 	//tensor_fill(&weight, 0.0);
 	
-	Storage s3;
 	Tensor bias;
-	tensor_make_4d(&bias, s3, 1, 1, 1, output_planes);
+	tensor_make_4d(&bias, NULL, 1, 1, 1, output_planes);
 	tensor_fill_funny(&bias, 0.6);
 	
-	Storage s4;
 	Tensor output;
-	tensor_make_4d(&output, s4, 1, output_planes, w2, h2);
+	tensor_make_4d(&output, NULL, 1, output_planes, w2, h2);
 	
 	convolution_forward(&input, &weight, &bias, &output);
 		
 	//tensor_print(&input);
 	//tensor_print(&weight);
 	//tensor_print(&bias);
-	tensor_print(&output);
+	//tensor_print(&output);
 }
 
 void test_linear_convolution() {
-	const int32_t w = 106;
-	const int32_t h = 104;
+	const int32_t w = 6;
+	const int32_t h = 4;
 	const int32_t kw = 3;
 	const int32_t kh = 3;
 	const int32_t w2 = w - kw + 1;
@@ -266,43 +271,38 @@ void test_linear_convolution() {
 	
 	// convolution
 	
-	Storage s1;
 	Tensor input;
-	tensor_make_4d(&input, s1, 1, input_planes, w, h);
+	tensor_make_4d(&input, NULL, 1, input_planes, w, h);
 	tensor_fill_funny(&input, 0.7);
 	
-	Storage s2;
 	Tensor convolution_weight;
-	tensor_make_4d(&convolution_weight, s2, output_planes, input_planes, kw, kh);
+	tensor_make_4d(&convolution_weight, NULL, output_planes, input_planes, kw, kh);
 	tensor_fill_funny(&convolution_weight, 0.8);
 	
-	Storage s3;
 	Tensor convolution_bias;
-	tensor_make_4d(&convolution_bias, s3, 1, 1, 1, output_planes);
+	tensor_make_4d(&convolution_bias, NULL, 1, 1, 1, output_planes);
 	tensor_fill_funny(&convolution_bias, 0.9);
 	
-	Storage s4;
 	Tensor convolution_output;
-	tensor_make_4d(&convolution_output, s4, 1, output_planes, w2, h2);
+	tensor_make_4d(&convolution_output, NULL, 1, output_planes, w2, h2);
 
 	// linear
-
+	
+	Storage s;
+	storage_make(&s, convolution_output.data, tensor_size(&convolution_output));
 	Tensor linear_input;
-	tensor_make_4d(&linear_input, s4, 1, 1, output_planes, w2 * h2);
+	tensor_make_4d(&linear_input, &s, 1, 1, output_planes, w2 * h2);
 
-	Storage s5;
 	Tensor linear_weight;
-	tensor_make_4d(&linear_weight, s5, 1, 1, outputs, w2 * h2);
+	tensor_make_4d(&linear_weight, NULL, 1, 1, outputs, w2 * h2);
 	tensor_fill_funny(&linear_weight, 1.0);
 	
-	Storage s6;
 	Tensor linear_bias;
-	tensor_make_4d(&linear_bias, s6, 1, 1, 1, outputs);
+	tensor_make_4d(&linear_bias, NULL, 1, 1, 1, outputs);
 	tensor_fill_funny(&linear_bias, 1.1);
 
-	Storage s7;
 	Tensor output;
-	tensor_make_4d(&output, s7, 1, 1, output_planes, outputs);
+	tensor_make_4d(&output, NULL, 1, 1, output_planes, outputs);
 	
 	convolution_forward(&input, &convolution_weight, &convolution_bias, &convolution_output);
 	linear_forward(&linear_input, &linear_weight, &linear_bias, &output);
