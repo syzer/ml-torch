@@ -14,3 +14,10 @@ make
 ```
 ./nn
 ```
+
+# Requirements
+
+Install torch:
+```
+http://torch.ch/docs/getting-started.html
+```
