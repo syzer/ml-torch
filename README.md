@@ -9,7 +9,11 @@ gcc required
 # Install
 
 ```
+# c version
 make
+
+# lua version
+th examples.lua
 ```
 
 # Run
@@ -20,6 +24,8 @@ make
 # Requirements
 
 Install torch:
-```
-http://torch.ch/docs/getting-started.html
-```
+[brew](https://e-lab.github.io/html/wiki-torch7-installation.html)
+
+or
+
+[shell](http://torch.ch/docs/getting-started.html)
