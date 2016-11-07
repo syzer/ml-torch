@@ -1,6 +1,4 @@
 
-// gcc -std=c99 -O0 nn.c
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -32,11 +30,6 @@ void assert(bool condition, int32_t line) {
 
 #define ASSERT(condition) assert(condition, __LINE__)
 //#define ASSERT(condition)
-
-void error() {
-	printf("Error\r");
-	exit(666);
-}
 
 void storage_make(Storage* this, float* data, int32_t size) {
 	this->data = data;
@@ -252,7 +245,40 @@ void test_convolution() {
 	tensor_print(&output);
 }
 
-void test_linear_convolution() {
+float max(float value1, float value2) {
+	if(value1 > value2) {
+		return value1;
+	} else {
+		return value2;
+	}
+}
+
+void relu_forward(Tensor* input, Tensor* output) {
+	ASSERT(input->size0 == input->size0);
+	ASSERT(input->size1 == input->size1);
+	ASSERT(input->size2 == input->size2);
+	ASSERT(input->size3 == input->size3);
+
+	int32_t count = tensor_size(input);
+	for(int32_t i = 0; i < count; i += 1) {
+		output->data[i] = max(0.0, input->data[i]);
+	}
+}
+
+void test_relu() {
+	Tensor input;
+	tensor_make_4d(&input, NULL, 2, 1, 2, 3);
+	tensor_fill_funny(&input, -0.5);
+	
+	Tensor output;
+	tensor_make_4d(&output, NULL, 2, 1, 2, 3);
+
+	relu_forward(&input, &output);
+	
+	tensor_print(&output);
+}
+
+void test_all() {
 	const int32_t w = 6;
 	const int32_t h = 4;
 	const int32_t kw = 3;
@@ -279,6 +305,10 @@ void test_linear_convolution() {
 	
 	Tensor convolution_output;
 	tensor_make_4d(&convolution_output, NULL, 1, output_planes, w2, h2);
+	
+	// relu
+	
+	// TODO
 
 	// linear
 	
@@ -312,6 +342,7 @@ int32_t main() {
 	test_linear();
 	test_convolution();
 	test_linear_convolution();
+	test_relu();
 	
 	//printf("N:%i\n", n);
 	
