@@ -6,7 +6,7 @@
 #include <math.h>
 
 //#define float double
-//#define TENSOR_PRINT_ENABLE
+#define TENSOR_PRINT_ENABLE
 
 typedef struct {
 	float* data;
@@ -179,7 +179,7 @@ void test_linear() {
 
 // https://github.com/torch/nn/blob/master/doc/convolution.md#nn.SpatialConvolution
 
-void convolution_forward(Tensor* input, Tensor* weight, Tensor* bias, Tensor* output) {
+void spatial_convolution_forward(Tensor* input, Tensor* weight, Tensor* bias, Tensor* output) {
 	const int32_t w = input->size2;
 	const int32_t h = input->size3;
 	const int32_t output_planes = weight->size0;
@@ -218,7 +218,7 @@ void convolution_forward(Tensor* input, Tensor* weight, Tensor* bias, Tensor* ou
 	}
 }
 
-void test_convolution() {
+void test_spatial_convolution() {
 	const int32_t w = 6;
 	const int32_t h = 4;
 	const int32_t kw = 3;
@@ -243,7 +243,7 @@ void test_convolution() {
 	Tensor output;
 	tensor_make_4d(&output, NULL, 1, output_planes, w2, h2);
 	
-	convolution_forward(&input, &weight, &bias, &output);
+	spatial_convolution_forward(&input, &weight, &bias, &output);
 		
 	//tensor_print(&input);
 	//tensor_print(&weight);
@@ -338,6 +338,12 @@ void test_batch_normalization() {
 	tensor_print(&output);
 }
 
+void spatial_batch_normalization() {
+}
+
+void test_spatial_batch_normalization() {
+}
+
 void test_all() {
 	const int32_t w = 6;
 	const int32_t h = 4;
@@ -366,7 +372,9 @@ void test_all() {
 	Tensor convolution_output;
 	tensor_make_4d(&convolution_output, NULL, 1, output_planes, w2, h2);
 	
-	// batch normalization
+	// spatial batch normalization
+	
+	// TODO
 	
 	// relu
 	
@@ -390,7 +398,7 @@ void test_all() {
 	Tensor output;
 	tensor_make_4d(&output, NULL, 1, 1, output_planes, outputs);
 	
-	convolution_forward(&input, &convolution_weight, &convolution_bias, &convolution_output);
+	spatial_convolution_forward(&input, &convolution_weight, &convolution_bias, &convolution_output);
 	linear_forward(&linear_input, &linear_weight, &linear_bias, &output);
 		
 	//tensor_print(&input);
@@ -402,9 +410,10 @@ int32_t main() {
 	printf("Helloo NN\n");
 
 	test_linear();
-	test_convolution();
+	test_spatial_convolution();
 	test_relu();
 	test_batch_normalization();
+	test_spatial_batch_normalization();
 	test_all();
 	
 	//printf("N:%i\n", n);
