@@ -3,6 +3,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+
+//#define float double
+//#define TENSOR_PRINT_ENABLE
 
 typedef struct {
 	float* data;
@@ -92,12 +96,14 @@ void tensor_fill(Tensor* this, float value) {
 }
 
 void tensor_print(Tensor* this) {
+#ifdef TENSOR_PRINT_ENABLE
 	printf("%i x %i x %i x %i\n", this->size0, this->size1, this->size2, this->size3);
 	int32_t size = tensor_size(this);
 	for(int32_t i = 0; i < size; i += 1) {
 		printf("%0.5f ", this->data[i]);
 	}
 	printf("\n");
+#endif
 }
 
 void tensor_fill_funny(Tensor* this, float add) {
@@ -278,6 +284,60 @@ void test_relu() {
 	tensor_print(&output);
 }
 
+// https://github.com/torch/nn/blob/master/doc/simple.md#nn.BatchNormalization
+
+void batch_normalization_forward(Tensor* input, Tensor* mean, Tensor* var, Tensor* output) {
+	const float epsilon = 1.0e-5;
+	
+	const int32_t n = input->size2;
+	const int32_t d = input->size3;
+	
+	ASSERT(input->size0 == 1);
+	ASSERT(input->size1 == 1);
+	ASSERT(output->size0 == 1);
+	ASSERT(output->size1 == 1);
+	
+	ASSERT(input->size2 == output->size2);
+	ASSERT(input->size3 == output->size3);
+
+	ASSERT(tensor_size(mean) == d);
+	ASSERT(tensor_size(var) == d);
+	
+	for(int32_t i = 0; i < n; i += 1) {
+		for(int32_t j = 0; j < d; j += 1) {
+			float ii = tensor_get_4d(input, 0, 0, i, j);
+			float mm = tensor_get_4d(mean, 0, 0, 0, j);
+			float vv = tensor_get_4d(var, 0, 0, 0, j);
+			float oo = (ii - mm) / sqrt(vv + epsilon);
+			tensor_set_4d(output, 0, 0, i, j, oo);
+		}
+	}
+}
+
+void test_batch_normalization() {
+	Tensor input;
+	tensor_make_4d(&input, NULL, 1, 1, 3, 5);
+	tensor_fill_funny(&input, 0.1);
+	
+	Tensor output;
+	tensor_make_4d(&output, NULL, 1, 1, 3, 5);
+
+	Tensor mean;
+	tensor_make_4d(&mean, NULL, 1, 1, 1, 5);
+	tensor_fill_funny(&mean, 0.2);
+
+	Tensor var;
+	tensor_make_4d(&var, NULL, 1, 1, 1, 5);
+	tensor_fill_funny(&var, 0.3);
+
+	batch_normalization_forward(&input, &mean, &var, &output);
+	
+	//tensor_print(&input);
+	//tensor_print(&mean);
+	//tensor_print(&var);
+	tensor_print(&output);
+}
+
 void test_all() {
 	const int32_t w = 6;
 	const int32_t h = 4;
@@ -305,6 +365,8 @@ void test_all() {
 	
 	Tensor convolution_output;
 	tensor_make_4d(&convolution_output, NULL, 1, output_planes, w2, h2);
+	
+	// batch normalization
 	
 	// relu
 	
@@ -341,8 +403,9 @@ int32_t main() {
 
 	test_linear();
 	test_convolution();
-	test_linear_convolution();
 	test_relu();
+	test_batch_normalization();
+	test_all();
 	
 	//printf("N:%i\n", n);
 	
