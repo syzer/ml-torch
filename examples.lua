@@ -1,4 +1,3 @@
-
 require 'nn'
 
 function fill_funny(t, add)
@@ -18,7 +17,6 @@ kh = 3
 -- Linear
 
 print("Linear")
-
 input = torch.Tensor(1, 1, width, height)
 fill_funny(input, 0.1)
 net = nn.Sequential()
@@ -28,7 +26,6 @@ fill_funny(fc1.weight, 0.2)
 fill_funny(fc1.bias, 0.3)
 net:add(fc1)
 net:forward(input)
-
 print(net.output)
 
 -- SpatialConvolution
@@ -42,12 +39,35 @@ fill_funny(conv1.bias, 0.6)
 net = nn.Sequential()
 net:add(conv1)
 net:forward(input)
-
 print(net.output)
 
--- Linear & SpatialConvolution
+-- ReLU
 
-print("SpatialConvolution & Linear")
+print("ReLU")
+input = torch.Tensor(2, 1, 2, 3)
+fill_funny(input, -0.5)
+net = nn.Sequential()
+net:add(nn.ReLU())
+net:forward(input)
+print(net.output)
+
+-- BatchNormalization
+
+print("BatchNormalization")
+input = torch.Tensor(3, 5)
+fill_funny(input1, 0.1)
+net = nn.Sequential()
+bn = nn.BatchNormalization(5, 1e-5, 0.1, false)
+net:add(bn)
+net:evaluate()
+fill_funny(bn.running_mean, 0.2)
+fill_funny(bn.running_var, 0.3)
+net:forward(input)
+print(net.output)
+
+-- All
+
+print("All")
 input = torch.Tensor(1, input_planes, width, height)
 fill_funny(input, 0.7)
 conv1OutSize = (width - kw + 1) * (height - kh + 1)
@@ -62,5 +82,4 @@ net:add(conv1)
 net:add(nn.View(conv1OutSize))
 net:add(fc1)
 net:forward(input)
-
 print(net.output)
