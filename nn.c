@@ -6,8 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_TENSOR_SIZE (100 * 1024 * 1024)
-
 typedef struct {
 	float* data;
 	int32_t size;
@@ -33,6 +31,7 @@ void assert(bool condition, int32_t line) {
 }
 
 #define ASSERT(condition) assert(condition, __LINE__)
+//#define ASSERT(condition)
 
 void error() {
 	printf("Error\r");
@@ -42,7 +41,7 @@ void error() {
 void storage_make(Storage* this, float* data, int32_t size) {
 	this->data = data;
 	this->size = size;
-}	
+}
 
 void tensor_make_4d(Tensor* this, Storage* storage, int32_t size0, int32_t size1, int32_t size2, int32_t size3) {
 	int32_t size = size0 * size1 * size2 * size3; 
@@ -115,6 +114,8 @@ void tensor_fill_funny(Tensor* this, float add) {
 	}
 }
 
+// https://github.com/torch/nn/blob/master/doc/simple.md#nn.Linear
+
 void linear_forward(Tensor* input, Tensor* weight, Tensor* bias, Tensor* output) {
 	const int32_t layers = input->size2;
 	const int32_t inputs = input->size3;
@@ -137,21 +138,13 @@ void linear_forward(Tensor* input, Tensor* weight, Tensor* bias, Tensor* output)
 		for(int32_t o = 0; o < outputs; o += 1) {
 			float sum = tensor_get_4d(bias, 0, 0, 0, o);
 			for(int32_t i = 0; i < inputs; i += 1) {
-				sum += tensor_get_4d(input, 0, 0, l, i) * tensor_get_4d(weight, 0, 0, o, i);
+				float ww = tensor_get_4d(weight, 0, 0, o, i);
+				float ii = tensor_get_4d(input, 0, 0, l, i);
+				sum += ww * ii;
 			}
 			tensor_set_4d(output, 0, 0, l, o, sum);
 		}
 	}
-	
-	/*
-	int32_t w = 0;
-	for(int32_t o = 0; o < outputs; o += 1) {
-		output->data[o] = bias->data[o];
-		for(int32_t i = 0; i < inputs; i += 1, w += 1) {
-			output->data[o] += input->data[i] * weight->data[w];
-		}
-	}
-	*/
 }
 
 void test_linear() {
@@ -184,6 +177,8 @@ void test_linear() {
 	//tensor_print(&bias);
 	tensor_print(&output);
 }
+
+// https://github.com/torch/nn/blob/master/doc/convolution.md#nn.SpatialConvolution
 
 void convolution_forward(Tensor* input, Tensor* weight, Tensor* bias, Tensor* output) {
 	const int32_t w = input->size2;
@@ -225,8 +220,8 @@ void convolution_forward(Tensor* input, Tensor* weight, Tensor* bias, Tensor* ou
 }
 
 void test_convolution() {
-	const int32_t w = 6000;
-	const int32_t h = 4000;
+	const int32_t w = 6;
+	const int32_t h = 4;
 	const int32_t kw = 3;
 	const int32_t kh = 3;
 	const int32_t w2 = w - kw + 1;
@@ -241,7 +236,6 @@ void test_convolution() {
 	Tensor weight;
 	tensor_make_4d(&weight, NULL, output_planes, input_planes, kw, kh);
 	tensor_fill_funny(&weight, 0.5);
-	//tensor_fill(&weight, 0.0);
 	
 	Tensor bias;
 	tensor_make_4d(&bias, NULL, 1, 1, 1, output_planes);
@@ -255,7 +249,7 @@ void test_convolution() {
 	//tensor_print(&input);
 	//tensor_print(&weight);
 	//tensor_print(&bias);
-	//tensor_print(&output);
+	tensor_print(&output);
 }
 
 void test_linear_convolution() {
