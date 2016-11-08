@@ -402,55 +402,98 @@ void test_all() {
 	const int32_t output_planes = 3;
 	const int32_t outputs = 2;
 	
-	// convolution
+	/*
+	input = torch.Tensor(1, input_planes, width, height)
+tensor_fill_funny(input, 0.1)
+spatconv_size = (width - kw + 1) * (height - kh + 1)
+spatconv = nn.SpatialConvolution(input_planes, output_planes, kw, kh)
+tensor_fill_funny(spatconv.weight, -0.2)
+tensor_fill_funny(spatconv.bias, -0.3)
+sbn = nn.SpatialBatchNormalization(output_planes, 1.0e-5, 0.1, false)
+tensor_fill_funny(sbn.running_mean, 0.4)
+tensor_fill_funny(sbn.running_var, 0.5)
+linear = nn.Linear(spatconv_size, 2)
+tensor_fill_funny(linear.weight, 0.6)
+tensor_fill_funny(linear.bias, 0.7)
+net = nn.Sequential()
+net:add(spatconv)
+net:add(sbn)
+net:add(nn.ReLU())
+net:add(nn.View(spatconv_size))
+net:add(linear)
+net:forward(input)
+tensor_print(net.output)
+    */
+	
+	// input
 	
 	Tensor input;
 	tensor_make_4d(&input, NULL, 1, input_planes, w, h);
-	tensor_fill_funny(&input, 0.7);
+	tensor_fill_funny(&input, 0.1);
+	
+	// convolution
 	
 	Tensor convolution_weight;
 	tensor_make_4d(&convolution_weight, NULL, output_planes, input_planes, kw, kh);
-	tensor_fill_funny(&convolution_weight, 0.8);
+	tensor_fill_funny(&convolution_weight,-0.2);
 	
 	Tensor convolution_bias;
 	tensor_make_4d(&convolution_bias, NULL, 1, 1, 1, output_planes);
-	tensor_fill_funny(&convolution_bias, 0.9);
+	tensor_fill_funny(&convolution_bias, -0.3);
 	
 	Tensor convolution_output;
 	tensor_make_4d(&convolution_output, NULL, 1, output_planes, w2, h2);
+
+	spatial_convolution_forward(&input, &convolution_weight, &convolution_bias, &convolution_output);
 	
 	// spatial batch normalization
+
+	Tensor sbn_mean;
+	tensor_make_4d(&sbn_mean, NULL, 1, 1, 1, output_planes);
+	tensor_fill_funny(&sbn_mean, 0.4);
 	
-	// TODO
+	Tensor sbn_var;
+	tensor_make_4d(&sbn_var, NULL, 1, 1, 1, output_planes);
+	tensor_fill_funny(&sbn_var, 0.5);
+	
+	Tensor sbn_output;
+	tensor_make_4d(&sbn_output, NULL, 1, output_planes, w2, h2);
+	
+	spatial_batch_normalization_forward(&convolution_output, &sbn_mean, &sbn_var, &sbn_output);
 	
 	// relu
 	
-	// TODO
+	Tensor relu_output;
+	tensor_make_4d(&relu_output, NULL, 1, output_planes, w2, h2);
+	
+	relu_forward(&sbn_output, &relu_output);
 
 	// linear
 	
 	Storage s;
-	storage_make(&s, convolution_output.data, tensor_size(&convolution_output));
+	storage_make(&s, relu_output.data, tensor_size(&relu_output));
 	Tensor linear_input;
 	tensor_make_4d(&linear_input, &s, 1, 1, output_planes, w2 * h2);
 
 	Tensor linear_weight;
 	tensor_make_4d(&linear_weight, NULL, 1, 1, outputs, w2 * h2);
-	tensor_fill_funny(&linear_weight, 1.0);
+	tensor_fill_funny(&linear_weight, 0.6);
 	
 	Tensor linear_bias;
 	tensor_make_4d(&linear_bias, NULL, 1, 1, 1, outputs);
-	tensor_fill_funny(&linear_bias, 1.1);
+	tensor_fill_funny(&linear_bias, 0.7);
+	
+	Tensor linear_output;
+	tensor_make_4d(&linear_output, NULL, 1, 1, output_planes, outputs);
+	
+	linear_forward(&linear_input, &linear_weight, &linear_bias, &linear_output);
 
-	Tensor output;
-	tensor_make_4d(&output, NULL, 1, 1, output_planes, outputs);
-	
-	spatial_convolution_forward(&input, &convolution_weight, &convolution_bias, &convolution_output);
-	linear_forward(&linear_input, &linear_weight, &linear_bias, &output);
-	
-	//tensor_print(&input);
-	//tensor_print(&linear_input);
-	tensor_print(&output);
+	// print
+		
+	//tensor_print(&convolution_output);
+	//tensor_print(&sbn_output);
+	//tensor_print(&relu_output);
+	tensor_print(&linear_output);
 }
 
 int32_t main() {
