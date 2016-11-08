@@ -1,10 +1,18 @@
 require 'nn'
 
-function fill_funny(t, add)
+function tensor_fill_funny(t, add)
   s = t:storage()
   for i = 1, s:size() do
     s[i] = ((i - 1) / s:size()) + add
   end
+end
+
+function tensor_print(t)
+  s = t:storage()
+  for i = 1, s:size() do
+    io.write(string.format("%0.5f ", s[i]))
+  end
+  io.write("\n");
 end
 
 width = 6
@@ -14,72 +22,82 @@ output_planes = 3
 kw = 3
 kh = 3
 
--- Linear
-
 print("Linear")
+
 input = torch.Tensor(1, 1, width, height)
-fill_funny(input, 0.1)
+tensor_fill_funny(input, 0.1)
 net = nn.Sequential()
 net:add(nn.View(width * height))
-fc1 = nn.Linear(width * height, 2)
-fill_funny(fc1.weight, 0.2)
-fill_funny(fc1.bias, 0.3)
-net:add(fc1)
+linear = nn.Linear(width * height, 2)
+tensor_fill_funny(linear.weight, 0.2)
+tensor_fill_funny(linear.bias, 0.3)
+net:add(linear)
 net:forward(input)
-print(net.output)
-
--- SpatialConvolution
+tensor_print(net.output)
 
 print("SpatialConvolution")
-input = torch.Tensor(1, input_planes, width, height)
-fill_funny(input, 0.4)
-conv1 = nn.SpatialConvolution(input_planes, output_planes, kw, kh)
-fill_funny(conv1.weight, 0.5)
-fill_funny(conv1.bias, 0.6)
-net = nn.Sequential()
-net:add(conv1)
-net:forward(input)
-print(net.output)
 
--- ReLU
+input = torch.Tensor(1, input_planes, width, height)
+tensor_fill_funny(input, 0.4)
+spatconv = nn.SpatialConvolution(input_planes, output_planes, kw, kh)
+tensor_fill_funny(spatconv.weight, 0.5)
+tensor_fill_funny(spatconv.bias, 0.6)
+net = nn.Sequential()
+net:add(spatconv)
+net:forward(input)
+tensor_print(net.output)
 
 print("ReLU")
+
 input = torch.Tensor(2, 1, 2, 3)
-fill_funny(input, -0.5)
+tensor_fill_funny(input, -0.5)
 net = nn.Sequential()
 net:add(nn.ReLU())
 net:forward(input)
-print(net.output)
-
--- BatchNormalization
+tensor_print(net.output)
 
 print("BatchNormalization")
+
 input = torch.Tensor(3, 5)
-fill_funny(input1, 0.1)
+tensor_fill_funny(input, 0.1)
 net = nn.Sequential()
 bn = nn.BatchNormalization(5, 1e-5, 0.1, false)
+tensor_fill_funny(bn.running_mean, 0.2)
+tensor_fill_funny(bn.running_var, 0.3)
 net:add(bn)
 net:evaluate()
-fill_funny(bn.running_mean, 0.2)
-fill_funny(bn.running_var, 0.3)
 net:forward(input)
-print(net.output)
+tensor_print(net.output)
 
--- All
+print("SpatialBatchNormalization")
+
+input = torch.Tensor(2, 3, 2, 2)
+tensor_fill_funny(input, 0.1)
+sbn = nn.SpatialBatchNormalization(3, 1.0e-5, 0.1, false)
+tensor_fill_funny(sbn.running_mean, 0.2)
+tensor_fill_funny(sbn.running_var, 0.3)
+net = nn.Sequential()
+net:add(sbn)
+net:evaluate()
+net:forward(input)
+tensor_print(net.output)
 
 print("All")
+
 input = torch.Tensor(1, input_planes, width, height)
-fill_funny(input, 0.7)
-conv1OutSize = (width - kw + 1) * (height - kh + 1)
-conv1 = nn.SpatialConvolution(input_planes, output_planes, kw, kh)
-fill_funny(conv1.weight, 0.8)
-fill_funny(conv1.bias, 0.9)
-fc1 = nn.Linear(conv1OutSize, 2)
-fill_funny(fc1.weight, 1.0)
-fill_funny(fc1.bias, 1.1)
+tensor_fill_funny(input, 0.7)
+spatconv_size = (width - kw + 1) * (height - kh + 1)
+spatconv = nn.SpatialConvolution(input_planes, output_planes, kw, kh)
+tensor_fill_funny(spatconv.weight, 0.8)
+tensor_fill_funny(spatconv.bias, 0.9)
+linear = nn.Linear(spatconv_size, 2)
+tensor_fill_funny(linear.weight, 1.0)
+tensor_fill_funny(linear.bias, 1.1)
 net = nn.Sequential()
-net:add(conv1)
-net:add(nn.View(conv1OutSize))
-net:add(fc1)
+net:add(spatconv)
+net:add(nn.View(spatconv_size))
+net:add(linear)
 net:forward(input)
-print(net.output)
+tensor_print(net.output)
+
+-- TODO save
