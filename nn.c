@@ -338,10 +338,57 @@ void test_batch_normalization() {
 	tensor_print(&output);
 }
 
-void spatial_batch_normalization() {
+// https://github.com/torch/nn/blob/master/doc/convolution.md#nn.SpatialBatchNormalization
+
+void spatial_batch_normalization_forward(Tensor* input, Tensor* mean, Tensor* var, Tensor* output) {
+	const float epsilon = 1.0e-5;
+	const int32_t d = input->size1;
+	
+	ASSERT(input->size0 == output->size0);
+	ASSERT(input->size1 == output->size1);
+	ASSERT(input->size2 == output->size2);
+	ASSERT(input->size3 == output->size3);
+
+	ASSERT(tensor_size(mean) == d);
+	ASSERT(tensor_size(var) == d);
+	
+	for(int32_t i = 0; i < input->size0; i += 1) {
+		for(int32_t j = 0; j < input->size1; j += 1) {
+			for(int32_t k = 0; k < input->size2; k += 1) {
+				for(int32_t l = 0; l < input->size3; l += 1) {
+					float ii = tensor_get_4d(input, i, j, k, l);
+					float mm = tensor_get_4d(mean, 0, 0, 0, j);
+					float vv = tensor_get_4d(var, 0, 0, 0, j);
+					float oo = (ii - mm) / sqrt(vv + epsilon);
+					tensor_set_4d(output, i, j, k, l, oo);
+				}
+			}
+		}
+	}
 }
 
 void test_spatial_batch_normalization() {
+	Tensor input;
+	tensor_make_4d(&input, NULL, 2, 3, 2, 2);
+	tensor_fill_funny(&input, 0.1);
+	
+	Tensor output;
+	tensor_make_4d(&output, NULL, 2, 3, 2, 2);
+
+	Tensor mean;
+	tensor_make_4d(&mean, NULL, 1, 1, 1, 3);
+	tensor_fill_funny(&mean, 0.2);
+
+	Tensor var;
+	tensor_make_4d(&var, NULL, 1, 1, 1, 3);
+	tensor_fill_funny(&var, 0.3);
+
+	spatial_batch_normalization_forward(&input, &mean, &var, &output);
+	
+	//tensor_print(&input);
+	//tensor_print(&mean);
+	//tensor_print(&var);
+	tensor_print(&output);
 }
 
 void test_all() {
@@ -400,7 +447,7 @@ void test_all() {
 	
 	spatial_convolution_forward(&input, &convolution_weight, &convolution_bias, &convolution_output);
 	linear_forward(&linear_input, &linear_weight, &linear_bias, &output);
-		
+	
 	//tensor_print(&input);
 	//tensor_print(&linear_input);
 	tensor_print(&output);
