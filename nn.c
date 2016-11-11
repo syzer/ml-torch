@@ -339,7 +339,6 @@ void test_batch_normalization() {
 }
 
 // https://github.com/torch/nn/blob/master/doc/convolution.md#nn.SpatialBatchNormalization
-
 void spatial_batch_normalization_forward(Tensor* input, Tensor* mean, Tensor* var, Tensor* output) {
 	const float epsilon = 1.0e-5;
 	const int32_t d = input->size1;
@@ -401,29 +400,6 @@ void test_all() {
 	const int32_t input_planes = 2;
 	const int32_t output_planes = 3;
 	const int32_t outputs = 2;
-	
-	/*
-	input = torch.Tensor(1, input_planes, width, height)
-tensor_fill_funny(input, 0.1)
-spatconv_size = (width - kw + 1) * (height - kh + 1)
-spatconv = nn.SpatialConvolution(input_planes, output_planes, kw, kh)
-tensor_fill_funny(spatconv.weight, -0.2)
-tensor_fill_funny(spatconv.bias, -0.3)
-sbn = nn.SpatialBatchNormalization(output_planes, 1.0e-5, 0.1, false)
-tensor_fill_funny(sbn.running_mean, 0.4)
-tensor_fill_funny(sbn.running_var, 0.5)
-linear = nn.Linear(spatconv_size, 2)
-tensor_fill_funny(linear.weight, 0.6)
-tensor_fill_funny(linear.bias, 0.7)
-net = nn.Sequential()
-net:add(spatconv)
-net:add(sbn)
-net:add(nn.ReLU())
-net:add(nn.View(spatconv_size))
-net:add(linear)
-net:forward(input)
-tensor_print(net.output)
-    */
 	
 	// input
 	

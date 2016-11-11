@@ -1,5 +1,5 @@
 nn: nn.c
-	gcc -std=c99 -O0 nn.c -o nn -lm
+	gcc -std=c99 -O3 nn.c -o nn -lm
     
 clean:
 	rm nn
